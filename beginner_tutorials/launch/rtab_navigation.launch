@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find beginner_tutorials)/launch/real_world.launch"/>
+
+  <include file="$(find beginner_tutorials)/launch/demo_turtlebot3_navigation.launch">
+    <arg name="localization" default="false"/>
+  </include>
+
+  <node pkg="rviz" type="rviz" name="rviz1" required="true"
+          args="--display-config $(find find_moving_objects)/rviz/moving_objects.rviz"/>
+
+
+</launch>

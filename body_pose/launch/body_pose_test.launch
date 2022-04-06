@@ -1,0 +1,9 @@
+<launch>
+    <node name="body_pose" pkg="body_pose" type="body_pose_node.py" output="screen"></node>
+    <node name="body_pose_tester" pkg="body_pose" type="body_pose_test_node.py" output="screen">
+        <remap from="~get_body_pose" to="/body_pose/get_body_pose" />
+        <remap from="~image" to="/camera_node/image_raw" />
+    </node>
+    <include file="$(find xiaoqiang_tts)/launch/tts_xunfei.launch" />
+    <include file="$(find usb_cam)/launch/ov2610.launch" />
+</launch>

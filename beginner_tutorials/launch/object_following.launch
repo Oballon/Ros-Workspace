@@ -1,0 +1,13 @@
+<launch>
+  <include file="$(find beginner_tutorials)/launch/real_world.launch"/>
+
+  <include file="$(find find_object)/launch/find_object_3d.launch"/>
+
+  <include file="$(find beginner_tutorials)/launch/demo_turtlebot3_navigation.launch">
+    <arg name="localization" default="false"/>
+  </include>
+
+<!-- 
+  <node pkg="find_object" type="tf_example" name="object_following"/>
+ -->
+</launch>

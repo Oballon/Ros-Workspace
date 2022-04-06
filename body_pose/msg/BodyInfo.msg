@@ -1,0 +1,17 @@
+float32[] nose
+float32[] right_eye
+float32[] left_eye
+float32[] right_ear
+float32[] left_ear
+float32[] right_arm_top
+float32[] left_arm_top
+float32[] right_arm_middle
+float32[] left_arm_middle
+float32[] right_arm_bottom
+float32[] left_arm_bottom
+float32[] right_leg_top
+float32[] left_leg_top
+float32[] right_leg_middle
+float32[] left_leg_middle
+float32[] right_leg_bottom
+float32[] left_leg_bottom

@@ -1,0 +1,44 @@
+<launch>
+  <arg name="map1" default="/home/quanyan/Desktop/Maps/2022-1-25.yaml"/>
+  <arg name="rviz" default="true"/>
+  <param name="use_sim_time" value="true"/>
+
+  <arg name="first_tb3"  default="tb3_0"/>
+
+  <arg name="first_tb3_x_pos" default="-7.0"/>
+  <arg name="first_tb3_y_pos" default="-1.0"/>
+  <arg name="first_tb3_z_pos" default=" 0.0"/>
+  <arg name="first_tb3_yaw"   default=" 0.0"/>
+
+  <group ns="$(arg first_tb3)/map_merge">
+    <param name="init_pose_x"   value="$(arg first_tb3_x_pos)"/>
+    <param name="init_pose_y"   value="$(arg first_tb3_y_pos)"/>
+    <param name="init_pose_z"   value="$(arg first_tb3_z_pos)"/>
+    <param name="init_pose_yaw" value="$(arg first_tb3_yaw)"  />
+  </group>
+
+  <node pkg="map_server" type="map_server" name="robot1_publisher" args="$(arg map1)" output="screen">
+    <param name="frame_id" value="robot1"/>
+    <remap from="map" to="/robot1/map"/>
+    <remap from="map_metadata" to="/robot1/map_metadata"/>
+  </node>
+
+  <node pkg="multirobot_map_merge" type="map_merge" respawn="false" name="map_merge" output="screen">
+    <param name="robot_map_topic" value="map"/>
+    <param name="robot_namespace" value="tb3"/>
+    <param name="merged_map_topic" value="map"/>
+    <param name="world_frame" value="map"/>
+    <param name="known_init_poses" value="true"/>
+    <param name="merging_rate" value="0.5"/>
+    <param name="discovery_rate" value="0.05"/>
+    <param name="estimation_rate" value="0.1"/>
+    <param name="estimation_confidence" value="1.0"/>
+  </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="world_to_$(arg first_tb3)_tf_broadcaster"  args="0 0 0 0 0 0 /map /$(arg first_tb3)/map 100"/>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find multirobot_map_merge)/launch/map_merge.rviz"/>
+
+</launch>
+
+<!-- http://wiki.ros.org/multirobot_map_merge -->

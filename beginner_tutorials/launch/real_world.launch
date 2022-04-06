@@ -1,0 +1,39 @@
+<launch>
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="x_pos" default="3.0"/>
+  <arg name="y_pos" default="1.0"/>
+  <arg name="z_pos" default="0.1"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find beginner_tutorials)/worlds/turtlebot3_house.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+
+  <arg name="robot_file" value="$(find beginner_tutorials)/models/burger_kinect/model.sdf"/>
+
+
+ 
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find beginner_tutorials)/urdf/turtlebot3_$(arg model).urdf.xacro" />
+
+  <param name="target_description" command="$(find xacro)/xacro --inorder $(find beginner_tutorials)/urdf/turtlebot3_burger.urdf.xacro" />
+
+
+
+
+  <group ns="waffle">
+    <param name="tf_prefix" value="waffle" />
+    <include file="$(find beginner_tutorials)/launch/multi_robots/waffle_robot.launch" >
+      <arg name="init_pose" value="-x 4 -y 1 -z 0.1" />
+      <arg name="robot_name"  value="waffle_robot" />
+    </include>
+  </group>
+
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model waffle -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
+
+
+</launch>

@@ -1,0 +1,15 @@
+<launch>
+  <param name="use_sim_time" value="true"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="time"/>
+
+  <!--node pkg="gazebo_ros" type="gazebo" name="gazebo" required="true"/-->
+
+  <node pkg="map_server" type="map_server" name="mapping" required="true" args="/home/quanyan/Desktop/Maps/$(arg time).yaml"/>
+
+  <!-- rviz -->
+  <group if="$(arg open_rviz)"> 
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d /home/quanyan/Desktop/Maps/maps.rviz"/>
+  </group>
+</launch>
