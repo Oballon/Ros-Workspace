@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>D3QN</name>
+  <version>1.0.0</version>
+  <description>
+    Towards Monocular Vision based Obstacle Avoidance through Deep Reinforcement Learning.
+  </description>
+  <license>Apache 2.0</license>
+  <author email="kkjong@robotis.com">Gilbert</author>
+  <maintainer email="pyo@robotis.com">Pyo</maintainer>
+
+  <url type="repository">https://github.com/xie9187/Monocular-Obstacle-Avoidance</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rospy</depend>
+</package>
