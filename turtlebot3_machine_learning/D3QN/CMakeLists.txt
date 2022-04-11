@@ -40,6 +40,7 @@ catkin_install_python(PROGRAMS
 
   nodes/D3QN_training
   nodes/D3QN_testing
+  nodes/D3QN_stage
 
   
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

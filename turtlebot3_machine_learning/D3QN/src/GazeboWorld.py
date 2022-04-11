@@ -18,10 +18,19 @@ from nav_msgs.msg import Odometry
 from kobuki_msgs.msg import BumperEvent
 
 
-class GazeboWorld():
+class GazeboWorld:
     def __init__(self):
         # initialize
-        rospy.init_node('GazeboWorld', anonymous=False)
+        self.TargetName = None
+        self.step_r_cnt = None
+        self.step_target = None
+        self.ranges = None
+        self.self_state = None
+        self.self_rotation_z_speed = None
+        self.self_linear_y_speed = None
+        self.self_linear_x_speed = None
+        self.scan_param = None
+        rospy.init_node('GazeboWorld', anonymous=True)
 
         # -----------Default Robot State-----------------------
         self.set_self_state = ModelState()
@@ -59,7 +68,8 @@ class GazeboWorld():
         self.max_steps = 10000
 
         self.depth_image = None
-        self.bump = False
+        self.rgb_image = None
+        self.bump = False  # 停用bump功能
 
         # -----------Publisher and Subscriber-------------
         self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size=10)
@@ -72,8 +82,9 @@ class GazeboWorld():
         self.depth_image_sub = rospy.Subscriber('camera/depth/image_raw', Image, self.DepthImageCallBack)
         self.laser_sub = rospy.Subscriber('scan', LaserScan, self.LaserScanCallBack)
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.OdometryCallBack)
-        self.bumper_sub = rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.BumperCallBack)
+        # self.bumper_sub = rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.BumperCallBack)
 
+        # rospy.spin()
         rospy.sleep(2.)
 
         # What function to call when you ctrl + c
@@ -123,7 +134,7 @@ class GazeboWorld():
     def LaserScanCallBack(self, scan):
         self.scan_param = [scan.angle_min, scan.angle_max, scan.angle_increment, scan.time_increment,
                            scan.scan_time, scan.range_min, scan.range_max]
-        self.scan = np.array(scan.ranges)
+        self.ranges = np.array(scan.ranges)
 
     def OdometryCallBack(self, odometry):
         self.self_linear_x_speed = odometry.twist.twist.linear.x
@@ -187,7 +198,7 @@ class GazeboWorld():
         except Exception as e:
             raise e
         self.resized_depth_img.publish(resized_img)
-        return (cv_img / 5.)
+        return cv_img / 5.
 
     def GetRGBImageObservation(self):
         # ros image to cv2 image
@@ -204,7 +215,7 @@ class GazeboWorld():
         except Exception as e:
             raise e
         self.resized_rgb_img.publish(resized_img)
-        return (cv_resized_img)
+        return cv_resized_img
 
     def PublishDepthPrediction(self, depth_img):
         # cv2 image to ros image and publish
@@ -216,12 +227,19 @@ class GazeboWorld():
         self.resized_depth_img.publish(resized_img)
 
     def GetLaserObservation(self):
-        scan = copy.deepcopy(self.scan)
-        scan[np.isnan(scan)] = 30.
-        return scan
+        ranges = copy.deepcopy(self.ranges)
+        scan_range = []
+        for i in range(len(ranges)):
+            if ranges[i] == float('Inf'):
+                scan_range.append(3.5)
+            # elif np.isnan(ranges[i]):
+            #     scan_range.append(0)
+            else:
+                scan_range.append(ranges[i])
+        return scan_range
 
     def GetSelfState(self):
-        return self.self_state;
+        return self.self_state
 
     def GetSelfLinearXSpeed(self):
         return self.self_linear_x_speed
@@ -297,14 +315,18 @@ class GazeboWorld():
         terminate = False
         reset = False
         [v, theta] = self.GetSelfOdomeSpeed()
-        laser = self.GetLaserObservation()
+        ranges = self.GetLaserObservation()
         reward = v * np.cos(theta) * 0.2 - 0.01
 
-        if self.GetBump() or np.amin(laser) < 0.46 or np.amin(laser) == 30.:
+        # or np.amin(laser) == 30.
+        if self.GetBump() or np.amin(self.ranges) < 0.46:
             reward = -10.
             terminate = True
             reset = True
+            print("-----------------Reset-bump--------------------")
+            print(np.amin(self.ranges))
         if t > 500:
             reset = True
+            print("---------------Reset-over-time-----------------")
 
         return reward, terminate, reset

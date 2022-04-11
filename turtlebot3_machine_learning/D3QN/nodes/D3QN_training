@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+from nav_msgs.msg import Odometry
+
 from GazeboWorld import GazeboWorld
 
 import tensorflow as tf2
@@ -217,7 +220,10 @@ def trainNetwork():
             depth_imgs_t1 = np.append(depth_img_t1, depth_imgs_t1[:, :, :(IMAGE_HIST - 1)], axis=2)
             reward_t, terminal, reset = env.GetRewardAndTerminate(t)
             if t > 0:
+                print("---------------point1------------------")
+
                 D.append((depth_imgs_t, a_t, reward_t, depth_imgs_t1, terminal))
+
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
             depth_imgs_t = depth_imgs_t1
@@ -267,6 +273,8 @@ def trainNetwork():
 
             r_epi = r_epi + reward_t
             t += 1
+            print("---------------point-time------------------")
+
             T += 1
             last_loop_time = loop_time
             loop_time = time.time()
@@ -293,11 +301,10 @@ def trainNetwork():
                   "/ LoopTime:", np.mean(loop_time_buf))
 
         episode = episode + 1
-
-
-def main():
-    trainNetwork()
+        print("---------------point-episode------------------")
 
 
 if __name__ == "__main__":
-    main()
+
+    trainNetwork()
+    # env = GazeboWorld()
