@@ -55,7 +55,7 @@ class GazeboWorld:
         self.rgb_image_size = [304, 228]
         self.bridge = CvBridge()
 
-        self.object_state = [0, 0, 0, 0]
+        self.object_state = [0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.object_name = []
 
         # 0. | left 90/s | left 45/s | right 45/s | right 90/s | acc 1/s | slow down -1/s
@@ -72,15 +72,15 @@ class GazeboWorld:
         self.bump = False  # 停用bump功能
 
         # -----------Publisher and Subscriber-------------
-        self.cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size=10)
+        self.cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.set_state = rospy.Publisher('gazebo/set_model_state', ModelState, queue_size=10)
-        self.resized_depth_img = rospy.Publisher('camera/depth/image_resized', Image, queue_size=10)
-        self.resized_rgb_img = rospy.Publisher('camera/rgb/image_resized', Image, queue_size=10)
+        # self.resized_depth_img = rospy.Publisher('camera/depth/image_resized', Image, queue_size=10)
+        # self.resized_rgb_img = rospy.Publisher('camera/rgb/image_resized', Image, queue_size=10)
 
         self.object_state_sub = rospy.Subscriber('gazebo/model_states', ModelStates, self.ModelStateCallBack)
-        self.rgb_image_sub = rospy.Subscriber('camera/rgb/image_raw', Image, self.RGBImageCallBack)
-        self.depth_image_sub = rospy.Subscriber('camera/depth/image_raw', Image, self.DepthImageCallBack)
-        self.laser_sub = rospy.Subscriber('scan', LaserScan, self.LaserScanCallBack)
+        # self.rgb_image_sub = rospy.Subscriber('camera/rgb/image_raw', Image, self.RGBImageCallBack)
+        # self.depth_image_sub = rospy.Subscriber('camera/depth/image_raw', Image, self.DepthImageCallBack)
+        # self.laser_sub = rospy.Subscriber('scan', LaserScan, self.LaserScanCallBack)
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.OdometryCallBack)
         # self.bumper_sub = rospy.Subscriber('mobile_base/events/bumper', BumperEvent, self.BumperCallBack)
 
@@ -124,40 +124,44 @@ class GazeboWorld:
 
         if self.default_states is None:
             self.default_states = copy.deepcopy(data)
+            self.object_name = copy.deepcopy(data.name)
 
-    def DepthImageCallBack(self, img):
-        self.depth_image = img
+    # def DepthImageCallBack(self, img):
+    #     self.depth_image = img
+    #
+    # def RGBImageCallBack(self, img):
+    #     self.rgb_image = img
 
-    def RGBImageCallBack(self, img):
-        self.rgb_image = img
-
-    def LaserScanCallBack(self, scan):
-        self.scan_param = [scan.angle_min, scan.angle_max, scan.angle_increment, scan.time_increment,
-                           scan.scan_time, scan.range_min, scan.range_max]
-        self.ranges = np.array(scan.ranges)
+    # def LaserScanCallBack(self, scan):
+    #     self.scan_param = [scan.angle_min, scan.angle_max, scan.angle_increment, scan.time_increment,
+    #                        scan.scan_time, scan.range_min, scan.range_max]
+    #     self.ranges = np.array(scan.ranges)
 
     def OdometryCallBack(self, odometry):
         self.self_linear_x_speed = odometry.twist.twist.linear.x
         self.self_linear_y_speed = odometry.twist.twist.linear.y
         self.self_rotation_z_speed = odometry.twist.twist.angular.z
 
-    def BumperCallBack(self, bumper_data):
-        if bumper_data.state == BumperEvent.PRESSED:
-            self.bump = True
-        else:
-            self.bump = False
+    # def BumperCallBack(self, bumper_data):
+    #     if bumper_data.state == BumperEvent.PRESSED:
+    #         self.bump = True
+    #     else:
+    #         self.bump = False
 
     def GetDepthImageObservation(self):
-        # ros image to cv2 image
+        data = None
+        while data is None:
+            try:
+                data = rospy.wait_for_message('camera/depth/image_raw', Image, timeout=5)
+            except Exception as e:
+                raise e
 
+        # ros image to cv2 image
         try:
-            cv_img = self.bridge.imgmsg_to_cv2(self.depth_image, "32FC1")
+            cv_img = self.bridge.imgmsg_to_cv2(data, "32FC1")
         except Exception as e:
             raise e
-        try:
-            cv_rgb_img = self.bridge.imgmsg_to_cv2(self.rgb_image, "bgr8")
-        except Exception as e:
-            raise e
+
         cv_img = np.array(cv_img, dtype=np.float32)
         # resize
         dim = (self.depth_image_size[0], self.depth_image_size[1])
@@ -193,50 +197,65 @@ class GazeboWorld:
         cv_img *= (10. / 255.)
 
         # cv2 image to ros image and publish
-        try:
-            resized_img = self.bridge.cv2_to_imgmsg(cv_img, "passthrough")
-        except Exception as e:
-            raise e
-        self.resized_depth_img.publish(resized_img)
+        # try:
+        #     resized_img = self.bridge.cv2_to_imgmsg(cv_img, "passthrough")
+        # except Exception as e:
+        #     raise e
+        # self.resized_depth_img.publish(resized_img)
         return cv_img / 5.
 
     def GetRGBImageObservation(self):
+        data = None
+        while data is None:
+            try:
+                data = rospy.wait_for_message('camera/rgb/image_raw', Image, timeout=5)
+            except Exception as e:
+                raise e
+
         # ros image to cv2 image
         try:
-            cv_img = self.bridge.imgmsg_to_cv2(self.rgb_image, "bgr8")
+            cv_img = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except Exception as e:
             raise e
+
         # resize
         dim = (self.rgb_image_size[0], self.rgb_image_size[1])
         cv_resized_img = cv2.resize(cv_img, dim, interpolation=cv2.INTER_AREA)
+
         # cv2 image to ros image and publish
-        try:
-            resized_img = self.bridge.cv2_to_imgmsg(cv_resized_img, "bgr8")
-        except Exception as e:
-            raise e
-        self.resized_rgb_img.publish(resized_img)
+        # try:
+        #     resized_img = self.bridge.cv2_to_imgmsg(cv_resized_img, "bgr8")
+        # except Exception as e:
+        #     raise e
+        # self.resized_rgb_img.publish(resized_img)
         return cv_resized_img
 
-    def PublishDepthPrediction(self, depth_img):
-        # cv2 image to ros image and publish
-        cv_img = np.array(depth_img, dtype=np.float32)
-        try:
-            resized_img = self.bridge.cv2_to_imgmsg(cv_img, "passthrough")
-        except Exception as e:
-            raise e
-        self.resized_depth_img.publish(resized_img)
-
     def GetLaserObservation(self):
-        ranges = copy.deepcopy(self.ranges)
+        data = None
+        while data is None:
+            try:
+                data = rospy.wait_for_message('scan', LaserScan, timeout=5)
+            except Exception as e:
+                raise e
+
         scan_range = []
-        for i in range(len(ranges)):
-            if ranges[i] == float('Inf'):
+        for i in range(len(data.ranges)):
+            if data.ranges[i] == float('Inf'):
                 scan_range.append(3.5)
             # elif np.isnan(ranges[i]):
             #     scan_range.append(0)
             else:
-                scan_range.append(ranges[i])
-        return scan_range
+                scan_range.append(data.ranges[i])
+        return np.amin(scan_range)
+
+    # def PublishDepthPrediction(self, depth_img):
+    #     # cv2 image to ros image and publish
+    #     cv_img = np.array(depth_img, dtype=np.float32)
+    #     try:
+    #         resized_img = self.bridge.cv2_to_imgmsg(cv_img, "passthrough")
+    #     except Exception as e:
+    #         raise e
+    #     self.resized_depth_img.publish(resized_img)
 
     def GetSelfState(self):
         return self.self_state
@@ -257,9 +276,9 @@ class GazeboWorld:
     def GetBump(self):
         return self.bump
 
-    def SetObjectPose(self, name='mobile_base', random_flag=False):
+    def SetObjectPose(self, name='waffle', random_flag=False):
         quaternion = tf.transformations.quaternion_from_euler(0., 0., np.random.uniform(-np.pi, np.pi))
-        if name is 'mobile_base':
+        if name is 'waffle':
             object_state = copy.deepcopy(self.set_self_state)
             object_state.pose.orientation.x = quaternion[0]
             object_state.pose.orientation.y = quaternion[1]
@@ -282,8 +301,8 @@ class GazeboWorld:
 
     def ResetWorld(self):
         self.SetObjectPose()  # reset robot
-        for x in range(len(self.object_name)):
-            self.SetObjectPose(self.object_name[x])  # reset target
+        # for x in range(len(self.object_name)):
+        #     self.SetObjectPose(self.object_name[x])  # reset target
         self.self_speed = [.4, 0.0]
         self.step_target = [0., 0.]
         self.step_r_cnt = 0.
@@ -315,16 +334,16 @@ class GazeboWorld:
         terminate = False
         reset = False
         [v, theta] = self.GetSelfOdomeSpeed()
-        ranges = self.GetLaserObservation()
+        min_range = self.GetLaserObservation()
         reward = v * np.cos(theta) * 0.2 - 0.01
 
         # or np.amin(laser) == 30.
-        if self.GetBump() or np.amin(self.ranges) < 0.46:
+        if self.GetBump() or min_range < 0.12:
             reward = -10.
             terminate = True
             reset = True
-            print("-----------------Reset-bump--------------------")
-            print(np.amin(self.ranges))
+            print("-----------------Reset-range--------------------")
+            print(min_range)
         if t > 500:
             reset = True
             print("---------------Reset-over-time-----------------")

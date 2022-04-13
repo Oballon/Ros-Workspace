@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1
+        - /TF1/Status1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Image1
@@ -20,7 +21,7 @@ Panels:
         - /VideoCapture1
         - /PointCloud21
       Splitter Ratio: 0.5
-    Tree Height: 801
+    Tree Height: 964
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -38,7 +39,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: LaserScan
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -50,7 +51,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: false
+      Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -63,7 +64,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 20
       Reference Frame: <Fixed Frame>
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -88,33 +89,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        camera_depth_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_depth_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_rgb_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_rgb_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        caster_back_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        caster_back_right_link:
+        caster_back_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -150,19 +125,7 @@ Visualization Manager:
           Value: true
         base_scan:
           Value: true
-        camera_depth_frame:
-          Value: true
-        camera_depth_optical_frame:
-          Value: true
-        camera_link:
-          Value: true
-        camera_rgb_frame:
-          Value: true
-        camera_rgb_optical_frame:
-          Value: true
-        caster_back_left_link:
-          Value: true
-        caster_back_right_link:
+        caster_back_link:
           Value: true
         imu_link:
           Value: true
@@ -191,16 +154,7 @@ Visualization Manager:
               base_link:
                 base_scan:
                   {}
-                camera_link:
-                  camera_depth_frame:
-                    camera_depth_optical_frame:
-                      {}
-                  camera_rgb_frame:
-                    camera_rgb_optical_frame:
-                      {}
-                caster_back_left_link:
-                  {}
-                caster_back_right_link:
+                caster_back_link:
                   {}
                 imu_link:
                   {}
@@ -239,7 +193,7 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /camera/rgb/image_raw
       Max Value: 1
       Median window: 5
@@ -249,7 +203,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: compressed
       Unreliable: false
-      Value: true
+      Value: false
     - Alpha: 0.699999988079071
       Class: rviz/Map
       Color Scheme: map
@@ -436,7 +390,7 @@ Visualization Manager:
       Download graph: false
       Download map: false
       Download namespace: rtabmap
-      Enabled: false
+      Enabled: true
       Filter ceiling (m): 0
       Filter floor (m): 0
       Invert Rainbow: false
@@ -454,7 +408,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: jsk_rviz_plugin/VideoCapture
       Enabled: false
       Name: VideoCapture
@@ -532,36 +486,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: jsk_rviz_plugin/TabletViewController
-      Control Mode: Orbit
-      Distance: 30.357240676879883
+      Class: rviz/ThirdPersonFollower
+      Distance: 26.129331588745117
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Eye:
-        X: -1.8950657844543457
-        Y: 4.2505974769592285
-        Z: 29.542848587036133
-      Focus:
-        X: 4.191555976867676
-        Y: 1.6883913278579712
-        Z: -0.08737492561340332
+      Field of View: 0.7853981852531433
+      Focal Point:
+        X: 8.039546966552734
+        Y: -0.32503074407577515
+        Z: 0
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
-      Maintain Vertical Axis: true
-      Mouse Enabled: true
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Placement Mouse Point: /rviz/current_mouse_point
-      Placement Publish Topic: /rviz/current_camera_placement
-      Placement Topic: /rviz/camera_placement
+      Pitch: 1.5697605609893799
       Target Frame: <Fixed Frame>
-      Transition Time: 0.5
-      Up:
-        X: 0
-        Y: 0
-        Z: 1
+      Yaw: -1.1641522235095181e-07
     Saved:
       - Class: jsk_rviz_plugin/TabletViewController
         Control Mode: Orbit
@@ -601,7 +545,7 @@ Window Geometry:
   Hide Right Dock: false
   Image:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001fe0000044ffc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003ac000000c900fffffffb0000000a0049006d00610067006501000003ef0000009d0000001600fffffffb0000000a0049006d0061006700650000000330000000ce0000000000000000fb0000000c00430061006d00650072006100000003ba000000d2000000000000000000000001000001650000044ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d0000044f000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a0000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000004d90000044f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001fe0000044ffc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000044f000000c900fffffffb0000000a0049006d00610067006500000003ef0000009d0000001600fffffffb0000000a0049006d0061006700650000000330000000ce0000000000000000fb0000000c00430061006d00650072006100000003ba000000d2000000000000000000000001000001650000044ffc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d0000044f000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004a00000003efc0100000002fb0000000800540069006d00650000000000000004a0000004f300fffffffb0000000800540069006d00650100000000000004500000000000000000000004d90000044f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -611,5 +555,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 2120
-  X: 62
-  Y: 752
+  X: 601
+  Y: 806

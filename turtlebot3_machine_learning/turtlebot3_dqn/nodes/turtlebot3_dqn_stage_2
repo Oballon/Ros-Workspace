@@ -29,7 +29,7 @@ from collections import deque
 from std_msgs.msg import Float32MultiArray
 from environment_stage_2 import Env
 from keras.models import Sequential, load_model
-from keras.optimizers import RMSprop
+from keras.optimizer_v2.rmsprop import RMSprop
 from keras.layers.core import Dense, Dropout, Activation
 
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     result = Float32MultiArray()
     get_action = Float32MultiArray()
 
-    state_size = 28
+    state_size = 364
     action_size = 5
 
     env = Env(action_size)

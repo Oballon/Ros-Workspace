@@ -5,7 +5,7 @@
   <arg name="z_pos" default="0.1"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find beginner_tutorials)/worlds/turtlebot3_house.world"/>
+    <arg name="world_name" value="$(find beginner_tutorials)/worlds/SquareWorld.world"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
@@ -25,13 +25,13 @@
 
 
 
-  <group ns="waffle">
+<!--   <group ns="waffle">
     <param name="tf_prefix" value="waffle" />
     <include file="$(find beginner_tutorials)/launch/multi_robots/waffle_robot.launch" >
       <arg name="init_pose" value="-x 4 -y 1 -z 0.1" />
       <arg name="robot_name"  value="waffle_robot" />
     </include>
-  </group>
+  </group> -->
 
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model waffle -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
 

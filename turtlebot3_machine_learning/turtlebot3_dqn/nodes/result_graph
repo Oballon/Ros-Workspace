@@ -20,6 +20,7 @@ import pyqtgraph as pg
 import sys
 import pickle
 from std_msgs.msg import Float32MultiArray, Float32
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
@@ -50,14 +51,14 @@ class Window(QMainWindow):
 
 
     def plot(self):
-        self.qValuePlt = pg.PlotWidget(self, title="Average max Q-value")
+        self.qValuePlt = pg.PlotWidget(self, background = "w", title="Average max Q-value")
         self.qValuePlt.move(0, 320)
         self.qValuePlt.resize(600, 300)
         self.timer1 = pg.QtCore.QTimer()
         self.timer1.timeout.connect(self.update)
         self.timer1.start(200)
 
-        self.rewardsPlt = pg.PlotWidget(self, title="Total reward")
+        self.rewardsPlt = pg.PlotWidget(self, background = "w", title="Total reward")
         self.rewardsPlt.move(0, 10)
         self.rewardsPlt.resize(600, 300)
 
@@ -70,9 +71,9 @@ class Window(QMainWindow):
     def update(self):
         self.rewardsPlt.showGrid(x=True, y=True)
         self.qValuePlt.showGrid(x=True, y=True)
-        self.rewardsPlt.plot(self.ep, self.data, pen=(255, 0, 0))
+        self.rewardsPlt.plot(self.ep, self.data, pen=(0, 0, 0))
         self.save_data([self.ep, self.data])
-        self.qValuePlt.plot(self.ep, self.rewards, pen=(0, 255, 0))
+        self.qValuePlt.plot(self.ep, self.rewards, pen=(0, 0, 0))
 
     def load_data(self):
         try:

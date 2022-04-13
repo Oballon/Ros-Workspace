@@ -220,10 +220,8 @@ def trainNetwork():
             depth_imgs_t1 = np.append(depth_img_t1, depth_imgs_t1[:, :, :(IMAGE_HIST - 1)], axis=2)
             reward_t, terminal, reset = env.GetRewardAndTerminate(t)
             if t > 0:
-                print("---------------point1------------------")
-
                 D.append((depth_imgs_t, a_t, reward_t, depth_imgs_t1, terminal))
-
+                print("------------------Append-succeed-----------------")
                 if len(D) > REPLAY_MEMORY:
                     D.popleft()
             depth_imgs_t = depth_imgs_t1

@@ -230,7 +230,7 @@ if __name__ == '__main__':
                 
                 data = [times_group]
                 export_data = zip_longest(*data, fillvalue= '')
-                with open('/home/quanyan/Desktop/efficiency.csv', 'w', encoding="ISO-8859-1", newline='') as file:
+                with open('/home/quanyan/Desktop/Train-recordings/efficiency.csv', 'w', encoding="ISO-8859-1", newline='') as file:
                     write = writer(file)
                     write.writerows(export_data)
                     

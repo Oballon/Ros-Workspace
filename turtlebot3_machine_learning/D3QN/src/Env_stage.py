@@ -135,8 +135,8 @@ class Env:
         while data is None:
             try:
                 data = rospy.wait_for_message('scan', LaserScan, timeout=5)
-            except:
-                pass
+            except Exception as e:
+                raise e
 
         state, done = self.getState(data)
         reward = self.setReward(state, done, action)
