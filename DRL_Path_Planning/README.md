@@ -6,7 +6,7 @@ This is a DRL(Deep Reinforcement Learning) platform built with Gazebo for the pu
 
 ## Software
 
-    Ubuntu 16.04
+    Ubuntu 20.04
     ROS Kinect
     Python 2.7.12
     tensorflow 1.12.0
