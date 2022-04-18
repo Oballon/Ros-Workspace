@@ -4,15 +4,23 @@
   <arg name="y_pos" default="1.0"/>
   <arg name="z_pos" default="0.1"/>
 
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find beginner_tutorials)/worlds/SquareWorld.world"/>
+<!--   <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find beginner_tutorials)/worlds/10obstacle_sensor_30m_5jackal.world"/>
     <arg name="paused" value="false"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="gui" value="true"/>
     <arg name="headless" value="false"/>
     <arg name="debug" value="false"/>
-  </include>
+  </include> -->
 
+  <arg name="world"      default="10obstacle.world"/> 
+  
+  <!-- Start Gazebo with an empty world. -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui"          value="true"/> 
+    <arg name="world_name"   value="$(find multi_jackal_tutorials)/worlds/$(arg world)"/>
+  </include>
 
   <arg name="robot_file" value="$(find beginner_tutorials)/models/burger_kinect/model.sdf"/>
 
