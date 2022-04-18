@@ -21,11 +21,11 @@ import cv2
 import os
 import math
 
-from gazebo_env_dynamic_obstacle_10jackal_test import envmodel
+from env_dynamic_obs import Env
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
-env = envmodel()
+env = Env()
 
 # 动作指令集---> v,w
 action_dict = {0: [1.0, -1.0], 1: [1.0, -0.5], 2: [1.0, 0.0],

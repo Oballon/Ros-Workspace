@@ -34,7 +34,7 @@ MAXENVSIZE  = 30.0  # 边长为30的正方形作为环境的大小
 MAXLASERDIS = 10.0  # 雷达最大的探测距离
 Image_matrix = []
 
-class envmodel():
+class Env():
     def __init__(self):
         rospy.init_node('control_node', anonymous=True)
         '''

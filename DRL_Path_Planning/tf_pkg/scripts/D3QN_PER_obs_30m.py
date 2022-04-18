@@ -6,11 +6,27 @@ Author: Wangcai
 Date: 06/2019
 """
 
-# 环境模型：gazebo_env_D3QN_PER_image_add_sensor_obstacle_world_30m_test.py
+# 环境模型：gazebo_env_D3QN_PER_image_add_sensor_obstacle_world_30m.py
 # launch文件：one_jackal_image_add_sensor.launch
 # world文件：obstacle_sensor.world
 
+# 对应的环境模型为gazebo_env_D3QN_PER_image_add_sensor_empty_world_30m.py
+
 # 导入的网络模型：
+# .../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_empty_world_30m_2019_06_01
+# 对应的reward文件：
+# 10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward.png
+# 10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward.txt
+# 训练好的网络模型:
+# .../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_obstacle_world_30m_2019_06_01
+
+# 第二次训练
+# 导入的网络模型：
+# .../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_obstacle_world_30m_2019_06_01
+# 对应的reward文件：
+# 10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_2.png
+# 10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_2.txt
+# 训练好的网络模型:
 # .../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_obstacle_world_30m_2_2019_06_02
 
 # Import modules
@@ -24,11 +40,11 @@ import cv2
 import os
 import math
 
-from gazebo_env_D3QN_PER_image_add_sensor_obstacle_world_30m_test import envmodel
+from env_obs_30m import Env
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
-env = envmodel()
+env = Env()
 
 # 动作指令集---> v,w
 action_dict = {0: [1.0, -1.0], 1: [1.0, -0.5], 2: [1.0, 0.0],
@@ -47,7 +63,7 @@ class DQN:
 
         # Initial parameters
         self.Num_start_training = 0
-        self.Num_training       = 0
+        self.Num_training       = 50000
         self.Num_test           = 5000
 
         self.learning_rate      = 0.001
@@ -56,9 +72,14 @@ class DQN:
         self.Final_epsilon      = 0.1
         # self.Epsilon            = 1.0
         # 第二次训练
+        # self.Epsilon            = 0.5
+        # 第三次训练
         self.Epsilon            = 0.5
 
-        # 训练好的模型
+        # 第一次训练
+        # self.load_path = '.../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_empty_world_30m_2019_06_01'
+        # 第二次训练
+        # self.load_path = '.../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_obstacle_world_30m_2019_06_01'
         self.load_path = '.../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_obstacle_world_30m_2_2019_06_02'
 
         self.step    = 1
@@ -291,6 +312,12 @@ class DQN:
 
         sess = tf.InteractiveSession(config=config)
 
+        # os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time)
+        # 第二次训练
+        os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_2' + '_' + self.date_time)
+        # 第三次训练
+        # os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_3' + '_' + self.date_time)
+
         init = tf.global_variables_initializer()
         sess.run(init)
 
@@ -354,14 +381,109 @@ class DQN:
 
         return observation_stack, observation_set, state_stack, state_set
 
+    def get_progress(self, step, Epsilon):
+        if step <= self.Num_start_training:
+            # Obsersvation
+            progress = 'Observing'
+            Epsilon = 1
+
+        elif step <= self.Num_start_training + self.Num_training:
+            # Training
+            progress = 'Training'
+            
+            # Decrease the epsilon value
+            if self.Epsilon > self.Final_epsilon:
+                Epsilon -= 1.0/self.Num_training
+            
+        elif step < self.Num_start_training + self.Num_training + self.Num_test:
+            # Testing
+            progress = 'Testing'
+            Epsilon = 0
+
+        else:
+            # Finished
+            progress = 'Finished'
+            Epsilon = 0
+            
+        return progress, Epsilon
+
+    # Select action according to the progress of training
     # 根据进度选择动作
-    def select_action(self, sess, observation_stack, state_stack):
-        # 动作是具有最大Q值的动作
-        Q_value = self.output.eval(feed_dict={self.x_image: [observation_stack], self.x_sensor: [state_stack]})
-        action = np.zeros([self.Num_action])
-        action[np.argmax(Q_value)] = 1
-        
+    def select_action(self, progress, sess, observation_stack, state_stack, Epsilon):
+        if progress == "Observing":
+            # 观察的情况下，随机选择一个action
+            Q_value = 0
+            action = np.zeros([self.Num_action])
+            action[random.randint(0, self.Num_action - 1)] = 1.0
+        elif progress == "Training":
+            if random.random() < Epsilon:
+                Q_value = 0
+                action = np.zeros([self.Num_action])
+                action[random.randint(0, self.Num_action - 1)] = 1
+            else:
+                # 否则，动作是具有最大Q值的动作
+                Q_value = self.output.eval(feed_dict={self.x_image: [observation_stack], self.x_sensor: [state_stack]})
+                action = np.zeros([self.Num_action])
+                action[np.argmax(Q_value)] = 1
+        else:
+            # 动作是具有最大Q值的动作
+            Q_value = self.output.eval(feed_dict={self.x_image: [observation_stack], self.x_sensor: [state_stack]})
+            action = np.zeros([self.Num_action])
+            action[np.argmax(Q_value)] = 1
         return action, Q_value
+
+    def train(self, minibatch, w_batch, batch_index):
+        # Select minibatch
+        # Num_batch = 32
+        # minibatch = random.sample(Replay_memory, self.Num_batch)  # 从 Replay_memory 中随机获取 Num_batch 个元素，作为一个片断返回
+
+        # Save the each batch data
+        observation_batch      = [batch[0] for batch in minibatch]
+        state_batch            = [batch[1] for batch in minibatch]
+        action_batch           = [batch[2] for batch in minibatch]
+        reward_batch           = [batch[3] for batch in minibatch]
+        observation_next_batch = [batch[4] for batch in minibatch]
+        state_next_batch       = [batch[5] for batch in minibatch]
+        terminal_batch         = [batch[6] for batch in minibatch]
+
+        # if step % self.Num_update == 0:
+        #     self.assign_network_to_target()
+        
+        # Get target values
+        y_batch = []
+        
+        # Selecting actions
+        Q_network = self.output.eval(feed_dict = {self.x_image: observation_next_batch, self.x_sensor: state_next_batch})
+        # observation_next_batch <- next_obs_stack
+        # 用当前网络计算下一个 observation_stack 的 动作价值函数
+
+        a_max = []
+
+        for i in range(Q_network.shape[0]):
+            # Q_network.shape[0] 得到 Q_network 的数量
+            a_max.append(np.argmax(Q_network[i]))  # current Q-network 负责选择动作
+
+        # Evaluation
+        Q_target = self.output_target.eval(feed_dict = {self.x_image: observation_next_batch, self.x_sensor: state_next_batch})
+        # 用 target 网络计算下一个 observation_stack 的 动作价值函数
+        for i in range(len(minibatch)):
+            if terminal_batch[i] == True:
+                y_batch.append(reward_batch[i])
+            else:
+                y_batch.append(reward_batch[i] + self.Gamma * Q_target[i, a_max[i]])
+                # target Q-network 来计算 target Q 值
+        # _, loss = sess.run([self.train_step, self.loss_train], feed_dict={self.action_target: action_batch, self.y_target: y_batch, self.x_image: observation_batch})
+        _, self.loss, TD_error_batch = self.sess.run([self.train_step, self.loss_train, self.TD_error], feed_dict = {self.action_target: action_batch,
+                                                                                                                        self.y_target: y_batch,
+                                                                                                                        self.x_image: observation_batch,
+                                                                                                                        self.x_sensor:state_batch,
+                                                                                                                        self.w_is: w_batch})
+        # Update TD_list
+        for i_batch in range(len(batch_index)):
+            self.TD_list[batch_index[i_batch]] = pow((abs(TD_error_batch[i_batch]) + self.eps), self.alpha)
+
+        # Update Beta
+        self.beta = self.beta + (1 - self.beta_init)/self.Num_training
 
     def Experience_Replay(self, observation, state, action, reward, next_observation, next_state, terminal):
 		# If Replay memory is longer than Num_replay_memory, delete the oldest one
@@ -385,97 +507,68 @@ class DQN:
 			TD_error = self.TD_error.eval(feed_dict = {self.action_target: [action], self.y_target: y, self.x_image: [observation], self.x_sensor:[state]})[0]
 			self.TD_list = np.append(self.TD_list, pow((abs(TD_error) + self.eps), self.alpha))
 			# ###################################################################################################################
-   
+
+    ################################################## PER ############################################################
+    def prioritized_minibatch(self):
+        # Update TD_error list
+        TD_normalized = self.TD_list / np.linalg.norm(self.TD_list, 1)
+        TD_sum = np.cumsum(TD_normalized)
+
+        # Get importance sampling weights
+        weight_is = np.power((self.Num_replay_memory * TD_normalized), - self.beta)
+        weight_is = weight_is / np.max(weight_is)
+
+        # Select mini batch and importance sampling weights
+        minibatch = []
+        batch_index = []
+        w_batch = []
+        for i in range(self.Num_batch):
+            rand_batch = random.random()
+            TD_index = np.nonzero(TD_sum >= rand_batch)[0][0]
+            batch_index.append(TD_index)
+            w_batch.append(weight_is[TD_index])
+            # minibatch.append(self.Replay_memory[TD_index])
+            minibatch.append(np.array(self.Replay_memory)[TD_index])
+
+        return minibatch, w_batch, batch_index
+    ###################################################################################################################
+
+    def save_model(self):
+        # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time + "/model.ckpt")
+        # 第二次训练
+        save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_2' + '_' + self.date_time + "/model.ckpt")
+        # 第三次训练
+        # save_path = self.saver.save(self.sess, 'saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_3' + '_' + self.date_time + "/model.ckpt")
+    
     def main(self):
         
         reward_list = []
 
-        # 小车的坐标
-        jackal_x  = []
-        jackal_y  = []
-        # 起点
-        start_x   = []
-        start_y   = []
-        # 终点
-        goal_x    = []
-        goal_y    = []
-        # 小车的起始转角
-        randangle = []
+        # 随机种子	
+        random.seed(1000)
+        np.random.seed(1000)
+        tf.set_random_seed(1234)
 
-        # 保存障碍
-        obs_pos_x     = []
-        obs_pos_y     = []
-        for i in range(500):
-            obs_pos_x.append([])
-            obs_pos_y.append([])
-            for j in range(10):
-                obs_pos_x[i].append(0)
-                obs_pos_y[i].append(0)
+        # 随机初始化起点和终点的位置
+        while(True):
+            randposition = 2 * self.d * np.random.random_sample((2, 2)) - self.d
+            if math.sqrt((randposition[0][0]-randposition[1][0])**2+(randposition[0][1]-randposition[1][1])**2) > 20.0:
+                break
 
-        filename1 = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_start_point_x.txt'
-        with open(filename1, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                Start_x = [float(s) for s in line.split()]
-                start_x.append(Start_x[0])
-        filename2 = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_start_point_y.txt'
-        with open(filename2, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                Start_y = [float(s) for s in line.split()]
-                start_y.append(Start_y[0])
-        filename3 = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_goal_point_x.txt'
-        with open(filename3, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                Goal_x = [float(s) for s in line.split()]
-                goal_x.append(Goal_x[0])
-        filename4 = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_goal_point_y.txt'
-        with open(filename4, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                Goal_y = [float(s) for s in line.split()]
-                goal_y.append(Goal_y[0])  
-        filename5 = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_randangle.txt'
-        with open(filename5, 'r') as f:
-            lines = f.readlines()
-            for line in lines:
-                Randangle = [float(s) for s in line.split()]
-                randangle.append(Randangle[0])
-        # 读取障碍
-        filename = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_obs_pos_x.txt'
-        with open(filename, 'r') as f:
-            lines = f.readlines()
-            i = 0
-            for line in lines:
-                OBS_x = line.split(",")
-                for j in range(10):     
-                    obs_pos_x[i][j] = float(OBS_x[j])
-                i += 1
-        filename = '.../DRL_Path_Planning/src/tf_pkg/scripts/14_static_obstacle_obs_pos_y.txt'
-        with open(filename, 'r') as f:
-            lines = f.readlines()
-            i = 0
-            for line in lines:
-                OBS_y = line.split(",")
-                for j in range(10):
-                    obs_pos_y[i][j] = float(OBS_y[j])
-                i += 1
-
-        env.reset_env(start=[start_x[0], start_y[0]], goal=[goal_x[0], goal_y[0]], Randangle=randangle[0], OBS_X=obs_pos_x[0], OBS_Y=obs_pos_y[0])
-        env_info,jackal_x_temp,jackal_y_temp = env.get_env()
-        jackal_x.append(jackal_x_temp)
-        jackal_y.append(jackal_y_temp)
+        env.reset_env(start=[randposition[0][0], randposition[0][1]], goal=[randposition[1][0], randposition[1][1]])
+        env_info = env.get_env()
         # env.info为4维，第1维为相机消息，第2维为agent robot的self state，第3维为terminal，第4维为reward
         self.observation_stack, self.observation_set ,self.state_stack, self.state_set= self.input_initialization(env_info)
         
         step_for_newenv = 0
         
-        i = 1
-
+        # Training & Testing
         while True:
-            # 根据进度选取动作
-            action, Q_value = self.select_action(self.sess, self.observation_stack, self.state_stack)
+            # Get Progress, train mode 获取当前的进度和train_mode的值
+            self.progress, self.Epsilon = self.get_progress(self.step, self.Epsilon)
+
+            # Select Actions 根据进度选取动作
+            action, Q_value = self.select_action(self.progress, self.sess, self.observation_stack, self.state_stack, self.Epsilon)
             action_in = np.argmax(action)
             cmd       = [0.0, 0.0] 
             v_cmd     = action_dict[action_in][0]
@@ -485,9 +578,7 @@ class DQN:
             env.step(cmd)
 
             # Get information for update
-            env_info ,jackal_x_temp, jackal_y_temp = env.get_env()
-            jackal_x.append(jackal_x_temp)
-            jackal_y.append(jackal_y_temp)
+            env_info = env.get_env()
 
             self.next_observation_stack, self.observation_set, self.next_state_stack, self.state_set = self.resize_input(env_info, self.observation_set, self.state_set)  # 调整输入信息
             terminal = env_info[-2]  # 获取terminal
@@ -495,6 +586,24 @@ class DQN:
 
             # Experience Replay
             self.Experience_Replay(self.observation_stack, self.state_stack, action, reward, self.next_observation_stack, self.next_state_stack, terminal)
+
+            if self.progress == 'Training':
+                # Update target network
+                if self.step % self.Num_update == 0:
+                    self.assign_network_to_target()    
+                # Train!! 
+
+                minibatch, w_batch, batch_index  = self.prioritized_minibatch()
+
+                # Training
+                self.train(minibatch, w_batch, batch_index)
+
+            # If progress is finished -> close! 
+            # if self.progress == 'Finished' or self.episode==self.MAXEPISODES:
+            # 第二次训练
+            if self.progress == 'Finished':
+                print('Finished!!')
+                break
 
             # Update information
             self.step += 1
@@ -509,39 +618,38 @@ class DQN:
 
             # If terminal is True
             if terminal == True:
-                JACKAL_x = np.array(jackal_x)
-                JACKAL_y = np.array(jackal_y)
-                np.savetxt('.../DRL_Path_Planning/src/tf_pkg/scripts/10_D3QN_PER_image_add_sensor_obstacle_world_30m_test_JACKAL_PATH_x'+'_'+str(i)+'.txt', JACKAL_x, delimiter=',')
-                np.savetxt('.../DRL_Path_Planning/src/tf_pkg/scripts/10_D3QN_PER_image_add_sensor_obstacle_world_30m_test_JACKAL_PATH_y'+'_'+str(i)+'.txt', JACKAL_y, delimiter=',')
-                jackal_x  = []
-                jackal_y  = []
+                # # if self.episode % 10 == 0:
+                # if self.progress == 'Training' and self.episode % 5 == 0:
+                #     self.save_model()
                 
                 step_for_newenv = 0
                 # Print informations
                 print('step:'+str(self.step)+'/'+'episode:'+str(self.episode)+'/'+'progress:'+self.progress+'/'+'epsilon:'+str(self.Epsilon)+'/'+'score:'+ str(self.score))
 
-                reward_list.append(self.score)
-                reward_array = np.array(reward_list)
-                # 第一次训练
-                np.savetxt('.../DRL_Path_Planning/src/tf_pkg/scripts/10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_test.txt', reward_array, delimiter=',')
-                # 第二次训练
-                # np.savetxt('.../DRL_Path_Planning/src/tf_pkg/scripts/test_static_obstacle_world_30m_results/10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_2_test.txt', reward_array, delimiter=',')
 
-                self.episode += 1
+                if self.progress == 'Training':
+                    self.save_model()
+                    reward_list.append(self.score)
+                    reward_array = np.array(reward_list)
+                    # np.savetxt('10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward.txt', reward_array, delimiter=',')
+                    # 第二次训练
+                    np.savetxt('10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_2.txt', reward_array, delimiter=',')
+                    # 第三次训练
+                    # np.savetxt('10_D3QN_PER_image_add_sensor_obstacle_world_30m_reward_3.txt', reward_array, delimiter=',')
+
+                if self.progress != 'Observing':
+                    self.episode += 1
 
                 self.score = 0
 
                 # 随机初始化起点和终点的位置
-                env.reset_env(start=[start_x[i], start_y[i]], goal=[goal_x[i], goal_y[i]], Randangle=randangle[i], OBS_X=obs_pos_x[i], OBS_Y=obs_pos_y[i])
-                env_info, jackal_x_temp, jackal_y_temp = env.get_env()
-                jackal_x.append(jackal_x_temp)
-                jackal_y.append(jackal_y_temp)
+                while(True):
+                    randposition = 2 * self.d * np.random.random_sample((2, 2)) - self.d
+                    if math.sqrt((randposition[0][0]-randposition[1][0])**2+(randposition[0][1]-randposition[1][1])**2) > 20.0:
+                        break
+                env.reset_env(start=[randposition[0][0], randposition[0][1]], goal=[randposition[1][0], randposition[1][1]])
+                env_info = env.get_env()
                 self.observation_stack, self.observation_set, self.state_stack, self.state_set = self.input_initialization(env_info)
-                i += 1
-            
-            if i==21:
-                print("Finished!!!!")
-                break
 
 if __name__ == '__main__':
 	agent = DQN()

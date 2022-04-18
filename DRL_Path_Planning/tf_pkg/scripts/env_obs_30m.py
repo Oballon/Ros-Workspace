@@ -30,11 +30,11 @@ import datetime
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
-MAXENVSIZE = 30.0  # 边长为30的正方形作为环境的大小
+MAXENVSIZE  = 30.0  # 边长为30的正方形作为环境的大小
 MAXLASERDIS = 10.0  # 雷达最大的探测距离
 Image_matrix = []
 
-class envmodel():
+class Env():
     def __init__(self):
         rospy.init_node('control_node', anonymous=True)
         '''
@@ -166,18 +166,17 @@ class envmodel():
         reward = reward - 0.01*(abs(self.w_last - self.cmd[1]) + abs(self.v_last - self.cmd[0])) 
         
         # 到达目标点有正的奖励
-        # if self.d < self.dis and not self.done_list:
         if self.d < self.dis:
             reward = reward + 20
-            print("Get 20 reward------goal point!!!!!!")
-            # self.done_list = True
-        '''
+            print("Goal point!!!!!!!!!!!!!!!!!!!!")
+
         # 碰撞障碍物有负的奖励
-        for i in range(len(self.obs_pos)):
-            if math.sqrt((self.robotstate[0]-self.obs_pos[i][0])**2 + (self.robotstate[1]-self.obs_pos[i][1])**2) < 1:
+        for i in range(self.num_obs):
+            if math.sqrt((self.robotstate[0]-self.obs_pos[i][0])**2 + (self.robotstate[1]-self.obs_pos[i][1])**2) < 1.5:
                 reward = reward - 1
-                self.done_list = True
-        '''
+                print("Obstacle!!!!!")
+                break
+
         return reward
 
     # 重置environment
@@ -188,46 +187,36 @@ class envmodel():
         self.d_sg = ((self.sp[0]-self.gp[0])**2 + (self.sp[1]-self.gp[1])**2)**0.5
         # 重新初始化各参数
         self.resetval()
-        '''
+
         #获取障碍的随机初始位置
-        #self.obs_pos = self.random_square(MAXENVSIZE/2)
-        #障碍物的半径是0.5m
+        #障碍物为边长为1m的正方体
         while(True):
             self.obs_pos = self.random_square(MAXENVSIZE/2)
             flag = True  # 用于判断起点和终点是否在障碍物的范围内
             for i in range(self.num_obs):
-                # 如果起点在障碍物周围1.5m的范围内则需要重新生成障碍物
-                if math.sqrt((self.sp[0]-self.obs_pos[i][0])**2+(self.sp[1]-self.obs_pos[i][1])**2) < 2:
+                # 如果起点在障碍物周围5.0m的范围内则需要重新生成障碍物
+                if math.sqrt((self.sp[0]-self.obs_pos[i][0])**2+(self.sp[1]-self.obs_pos[i][1])**2) < 5.0:
                     flag = False
-                    # print("obtacle generating fail for start point!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                # 如果终点在障碍物周围1.5m的范围内则需要重新生成障碍物
-                if math.sqrt((self.gp[0]-self.obs_pos[i][0])**2+(self.gp[1]-self.obs_pos[i][1])**2) < 2:
+                # 如果终点在障碍物周围5.0m的范围内则需要重新生成障碍物
+                if math.sqrt((self.gp[0]-self.obs_pos[i][0])**2+(self.gp[1]-self.obs_pos[i][1])**2) < 5.0:
                     flag = False
-                    # print("obtacle generating fail for state for goal point!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                 # 如果两个障碍相隔太近则需要重新生成障碍物
                 for j in range(i + 1, self.num_obs):
-                    if math.sqrt((self.obs_pos[i][0]-self.obs_pos[j][0])**2+(self.obs_pos[i][1]-self.obs_pos[j][1])**2) < 2:
+                    if math.sqrt((self.obs_pos[i][0]-self.obs_pos[j][0])**2+(self.obs_pos[i][1]-self.obs_pos[j][1])**2) < 5.0:
                         flag = False
-                        # print("obtacle generating fail for obstacle!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")     
             if flag == True:
                 break
-        '''
+        
         rospy.wait_for_service('/gazebo/set_model_state')
         val = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
         randomposition = 2 * self.dis * np.random.random_sample((1, 2)) - self.dis
         # agent robot生成一个随机的角度
         randangle = 2 * math.pi * np.random.random_sample(1) - math.pi
-        # 根据model name对每个物体的位置初始化
+        # 根据model name对每个物体的位置初始化 
         state = ModelState()
         for i in range(len(self.gazebo_model_states.name)):
-            if self.gazebo_model_states.name[i] == "point_start":
-                state.reference_frame = 'world'
-                state.pose.position.z = 0.0
-                state.model_name = self.gazebo_model_states.name[i]
-                state.pose.position.x = self.sp[0]
-                state.pose.position.y = self.sp[1]
-                val(state)
+
             if self.gazebo_model_states.name[i] == "point_goal":
                 state.reference_frame = 'world'
                 state.pose.position.z = 0.0
@@ -250,7 +239,7 @@ class envmodel():
                 val(state)
                 # 到目标点的距离
                 self.d = math.sqrt((state.pose.position.x - self.gp[0])**2 + (state.pose.position.y - self.gp[1])**2)
-            '''
+            
             for k in range(self.num_obs):
                 NAME_OBS = 'obs' + str(k)
                 if self.gazebo_model_states.name[i] == NAME_OBS:
@@ -258,66 +247,40 @@ class envmodel():
                     state.pose.position.z = 0.0
                     state.model_name = self.gazebo_model_states.name[i]
                     state.pose.position.x = self.obs_pos[k][0]
-                    state.pose.position.y = self.obs_pos[k][1]            
+                    state.pose.position.y = self.obs_pos[k][1]    
                     val(state)
-            '''
+            
         self.done_list = False  # episode结束的标志
         print("The environment has been reset!")     
         time.sleep(2.0)
     
-    # # 随机初始化障碍的位置
-    # def random_square(self, a):
+    # 随机初始化障碍的位置
+    def random_square(self, a):
+        obstacle_robot_position = []
+        x1, y1 = -a, -a
+        x2, y2 = a, -a
+        x3, y3 = -a, a
+        x4, y4 = a, a
 
-    #     obstacle_robot_position = []
-    #     x1, y1 = -a, -a
-    #     x2, y2 = a, -a
-    #     x3, y3 = -a, a
-    #     x4, y4 = a, a
+        # 初始化
+        for i in range(self.num_obs):
+            obstacle_robot_position.append([0.0, 0.0]) 
 
-    #     '''
-    #     plt.figure(figsize=(8, 8))
-    #     theta = np.arange(0, 1, 0.001)
-    #     x = theta * x1 + (1 - theta) * x2
-    #     y = theta * y1 + (1 - theta) * y2
-    #     plt.plot(x, y, 'g--', linewidth=2)    
-    #     x = theta * x1 + (1 - theta) * x3
-    #     y = theta * y1 + (1 - theta) * y3
-    #     plt.plot(x, y, 'g--', linewidth=2)
-    #     x = theta * x2 + (1 - theta) * x4
-    #     y = theta * y2 + (1 - theta) * y4
-    #     plt.plot(x, y, 'g--', linewidth=2)    
-    #     x = theta * x3 + (1 - theta) * x4
-    #     y = theta * y3 + (1 - theta) * y4
-    #     plt.plot(x, y, 'g--', linewidth=2)
-    #     '''
-    #     # 初始化
-    #     for i in range(self.num_obs):
-    #         obstacle_robot_position.append([0.0, 0.0]) 
-        
-    #     random_list = np.random.random_sample(self.num_obs)
-    #     #print("random_list={}".format(random_list))
-    #     for i in range(self.num_obs):
-    #         if random_list[i] >= 0.5:
-    #             rnd11 = np.random.random()
-    #             rnd21 = np.random.random()
-    #             rnd21 = np.sqrt(rnd21)
-    #             obstacle_robot_position[i][0]=rnd21 * (rnd11 * x1 + (1 - rnd11) * x2) + (1 - rnd21) * x3
-    #             obstacle_robot_position[i][1]=rnd21 * (rnd11 * y1 + (1 - rnd11) * y2) + (1 - rnd21) * y3
-    #             # plt.plot(obstacle_robot_position[i][0], obstacle_robot_position[i][1], 'ro')
-    #         else:
-    #             rnd12 = np.random.random()
-    #             rnd22 = np.random.random()
-    #             rnd22 = np.sqrt(rnd22)
-    #             obstacle_robot_position[i][0]=rnd22 * (rnd12 * x3 + (1 - rnd12) * x4) + (1 - rnd22) * x2
-    #             obstacle_robot_position[i][1]=rnd22 * (rnd12 * y3 + (1 - rnd12) * y4) + (1 - rnd22) * y2
-    #             # plt.plot(obstacle_robot_position[i][0], obstacle_robot_position[i][1], 'ro')
-    #     '''
-    #     name_map = 'map' + str(self.count_map)
-    #     plt.savefig(os.path.join(self.foldername_map, name_map))
-    #     self.count_map = self.count_map + 1
-    #     plt.close()
-    #     '''
-    #     return obstacle_robot_position
+        random_list = np.random.random_sample(self.num_obs)
+        for i in range(self.num_obs):
+            if random_list[i] >= 0.5:
+                rnd11 = np.random.random()
+                rnd21 = np.random.random()
+                rnd21 = np.sqrt(rnd21)
+                obstacle_robot_position[i][0]=rnd21 * (rnd11 * x1 + (1 - rnd11) * x2) + (1 - rnd21) * x3
+                obstacle_robot_position[i][1]=rnd21 * (rnd11 * y1 + (1 - rnd11) * y2) + (1 - rnd21) * y3
+            else:
+                rnd12 = np.random.random()
+                rnd22 = np.random.random()
+                rnd22 = np.sqrt(rnd22)
+                obstacle_robot_position[i][0]=rnd22 * (rnd12 * x3 + (1 - rnd12) * x4) + (1 - rnd22) * x2
+                obstacle_robot_position[i][1]=rnd22 * (rnd12 * y3 + (1 - rnd12) * y4) + (1 - rnd22) * y2
+        return obstacle_robot_position
 
     def get_env(self):
         env_info=[]
@@ -327,19 +290,7 @@ class envmodel():
         selfstate[0] = self.robotstate[2]  # v
         selfstate[1] = self.robotstate[3]  # w
         # d代表agent机器人距离目标的位置-->归一化[0,1]
-        # selfstate[2] = self.d/MAXENVSIZE
-        # 第1 2次训练
-        # ----------------------------------------
-        # d代表agent机器人距离目标的位置-->归一化[0,1]
-        # selfstate[2] = self.d/MAXENVSIZE
-        # ----------------------------------------
-        # 第3次训练
-        # ----------------------------------------
-        if self.d >= 5.0:
-            selfstate[2] = 1.0
-        else:
-            selfstate[2] = self.d/5.0
-        # ----------------------------------------
+        selfstate[2] = self.d/MAXENVSIZE
         dx = -(self.robotstate[0]-self.gp[0])
         dy = -(self.robotstate[1]-self.gp[1])
         xp = dx*math.cos(self.robotstate[4]) + dy*math.sin(self.robotstate[4])
@@ -396,14 +347,18 @@ class envmodel():
             self.done_list = False  # 不终止
         else:
             self.done_list = True  # 终止
-            print("Goal Point!")
-        '''
-        # 障碍物判断
-        for i in range(len(self.obs_pos)):
-            # 障碍物的半径为0.5m
-            if math.sqrt((self.robotstate[0]-self.obs_pos[i][0])**2 + (self.robotstate[1]-self.obs_pos[i][1])**2) >= 1.0:
-                self.done_list = False  # 不终止
-        '''
+        
+        # 是否与障碍物发生碰撞判断
+        if self.done_list == False:
+            for i in range(len(self.obs_pos)):
+                # 障碍物的边长为1.0m
+                if math.sqrt((self.robotstate[0]-self.obs_pos[i][0])**2 + (self.robotstate[1]-self.obs_pos[i][1])**2) >= 1.5:
+                    self.done_list = False  # 不终止
+                else:
+                    # print("Obstacle!")
+                    self.done_list = True  # 终止
+                    break
+        
         env_info.append(self.done_list)
 
         self.r = self.getreward()

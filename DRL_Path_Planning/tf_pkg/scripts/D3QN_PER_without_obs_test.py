@@ -24,11 +24,11 @@ import cv2
 import os
 import math
 
-from gazebo_env_D3QN_PER_image_add_sensor_empty_world_30m_test import envmodel
+from env_without_obs_test import Env
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'  # 默认显卡0
 
-env = envmodel()
+env = Env()
 
 # 动作指令集---> v,w
 action_dict = {0: [1.0, -1.0], 1: [1.0, -0.5], 2: [1.0, 0.0],

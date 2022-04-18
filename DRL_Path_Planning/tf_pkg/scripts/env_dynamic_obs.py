@@ -23,7 +23,7 @@ import math
 import numpy as np
 import time
 from Models import *
-from pathplaner import *
+from path_planer import *
 import matplotlib.pyplot as plt
 import os
 import shutil
@@ -37,7 +37,7 @@ from cv_bridge import CvBridge, CvBridgeError
 MAXENVSIZE  = 30.0  # 边长为30的正方形作为环境的大小
 MAXLASERDIS = 10.0  # 雷达最大的探测距离
 
-class envmodel():
+class Env():
 
     def __init__(self,):
         rospy.init_node('planningnode', anonymous=True)
@@ -144,8 +144,8 @@ class envmodel():
                 v = math.sqrt(data.twist[i].linear.x**2 + data.twist[i].linear.y**2)
                 self.obs_robot_state[self.dict_name_id[data.name[i]]][2] = v
                 self.obs_robot_state[self.dict_name_id[data.name[i]]][3] = data.twist[i].angular.z
-                rpy = self.euler_from_quaternion(data.pose[i].orientation.x,data.pose[i].orientation.y,
-                data.pose[i].orientation.z,data.pose[i].orientation.w)
+                rpy = self.euler_from_quaternion(data.pose[i].orientation.x, data.pose[i].orientation.y,
+                data.pose[i].orientation.z, data.pose[i].orientation.w)
                 self.obs_robot_state[self.dict_name_id[data.name[i]]][4] = rpy[2]
                 self.obs_robot_state[self.dict_name_id[data.name[i]]][5] = data.twist[i].linear.x
                 self.obs_robot_state[self.dict_name_id[data.name[i]]][6] = data.twist[i].linear.y
@@ -158,7 +158,7 @@ class envmodel():
                 self.robotstate[2] = v
                 self.robotstate[3] = data.twist[i].angular.z
                 rpy = self.euler_from_quaternion(data.pose[i].orientation.x,data.pose[i].orientation.y,
-                data.pose[i].orientation.z,data.pose[i].orientation.w)
+                data.pose[i].orientation.z, data.pose[i].orientation.w)
                 self.robotstate[4] = rpy[2]
                 self.robotstate[5] = data.twist[i].linear.x
                 self.robotstate[6] = data.twist[i].linear.y
