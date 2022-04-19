@@ -31,15 +31,19 @@ Date: 06/2019
 
 import datetime
 import math
+import sys
 import os
 import random
-
 import numpy as np
-# Import modules
+
 import tensorflow as tf
+
+directory = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(directory)
 
 from env_obs_30m import Env
 
+tf.compat.v1.disable_v2_behavior()
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 env = Env()
@@ -150,15 +154,15 @@ class DQN:
         if len(shape) == 1:
             dim_sum += 1
         bound = np.sqrt(2.0 / dim_sum)
-        return tf.random_uniform(shape, minval=-bound, maxval=bound)
+        return tf.random.uniform(shape, minval=-bound, maxval=bound)
 
     # Convolution function
     def conv2d(self, x, w, stride):  # 定义一个函数，用于构建卷积层
-        return tf.nn.conv2d(x, w, strides=[1, stride, stride, 1], padding='SAME')
+        return tf.nn.conv2d(input=x, filters=w, strides=[1, stride, stride, 1], padding='SAME')
 
     def assign_network_to_target(self):
         # Get trainable variables
-        trainable_variables = tf.trainable_variables()
+        trainable_variables = tf.compat.v1.trainable_variables()
         # network lstm variables
         trainable_variables_network = [var for var in trainable_variables if var.name.startswith('network')]
 
@@ -166,20 +170,21 @@ class DQN:
         trainable_variables_target = [var for var in trainable_variables if var.name.startswith('target')]
 
         for i in range(len(trainable_variables_network)):
-            self.sess.run(tf.assign(trainable_variables_target[i], trainable_variables_network[i]))
+            self.sess.run(tf.compat.v1.assign(trainable_variables_target[i], trainable_variables_network[i]))
 
     def network(self):
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
 
         # Input------image
-        self.x_image = tf.placeholder(tf.float32, shape=[None, self.img_size, self.img_size, self.Num_stackFrame])
+        self.x_image = tf.compat.v1.placeholder(tf.float32,
+                                                shape=[None, self.img_size, self.img_size, self.Num_stackFrame])
         self.x_normalize = (self.x_image - (255.0 / 2)) / (255.0 / 2)  # 归一化处理
 
         # Input------sensor
-        self.x_sensor = tf.placeholder(tf.float32, shape=[None, self.Num_stackFrame, self.Num_dataSize])
+        self.x_sensor = tf.compat.v1.placeholder(tf.float32, shape=[None, self.Num_stackFrame, self.Num_dataSize])
         self.x_unstack = tf.unstack(self.x_sensor, axis=1)
 
-        with tf.variable_scope('network'):
+        with tf.compat.v1.variable_scope('network'):
             # Convolution variables
             w_conv1 = self.weight_variable(self.first_conv)  # w_conv1 = ([8,8,4,32]) 
             b_conv1 = self.bias_variable([self.first_conv[3]])  # b_conv1 = ([32])
@@ -208,8 +213,8 @@ class DQN:
             b_fc2_2 = self.bias_variable([self.second_dense_action[1]])  # b_fc2_2 = ([5])
 
             # LSTM cell
-            cell = tf.contrib.rnn.BasicLSTMCell(num_units=self.Num_cellState)
-            rnn_out, rnn_state = tf.nn.static_rnn(inputs=self.x_unstack, cell=cell, dtype=tf.float32)
+            cell = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=self.Num_cellState)
+            rnn_out, rnn_state = tf.compat.v1.nn.static_rnn(inputs=self.x_unstack, cell=cell, dtype=tf.float32)
 
         h_conv1 = tf.nn.relu(self.conv2d(self.x_normalize, w_conv1, 4) + b_conv1)
         h_conv2 = tf.nn.relu(self.conv2d(h_conv1, w_conv2, 2) + b_conv2)
@@ -226,11 +231,11 @@ class DQN:
         # h_fc1_action = tf.nn.relu(tf.matmul(h_concat, w_fc1_2)+b_fc1_2)
         h_fc2_state = tf.matmul(h_fc1_state, w_fc2_1) + b_fc2_1
         h_fc2_action = tf.matmul(h_fc1_action, w_fc2_2) + b_fc2_2
-        h_fc2_advantage = tf.subtract(h_fc2_action, tf.reduce_mean(h_fc2_action))
+        h_fc2_advantage = tf.subtract(h_fc2_action, tf.reduce_mean(input_tensor=h_fc2_action))
 
         output = tf.add(h_fc2_state, h_fc2_advantage)  # 神经网络的最后输出
 
-        with tf.variable_scope('target'):
+        with tf.compat.v1.variable_scope('target'):
             # Convolution variables target
             w_conv1_target = self.weight_variable(self.first_conv)
             b_conv1_target = self.bias_variable([self.first_conv[3]])
@@ -255,9 +260,9 @@ class DQN:
             b_fc2_2_target = self.bias_variable([self.second_dense_action[1]])
 
             # LSTM cell
-            cell_target = tf.contrib.rnn.BasicLSTMCell(num_units=self.Num_cellState)
-            rnn_out_target, rnn_state_target = tf.nn.static_rnn(inputs=self.x_unstack, cell=cell_target,
-                                                                dtype=tf.float32)
+            cell_target = tf.compat.v1.nn.rnn_cell.BasicLSTMCell(num_units=self.Num_cellState)
+            rnn_out_target, rnn_state_target = tf.compat.v1.nn.static_rnn(inputs=self.x_unstack, cell=cell_target,
+                                                                          dtype=tf.float32)
 
         # Target Network
         h_conv1_target = tf.nn.relu(self.conv2d(self.x_normalize, w_conv1_target, 4) + b_conv1_target)
@@ -274,7 +279,7 @@ class DQN:
         # h_fc1_action_target = tf.nn.relu(tf.matmul(h_concat_target, w_fc1_2_target)+b_fc1_2_target)
         h_fc2_state_target = tf.matmul(h_fc1_state_target, w_fc2_1_target) + b_fc2_1_target
         h_fc2_action_target = tf.matmul(h_fc1_action_target, w_fc2_2_target) + b_fc2_2_target
-        h_fc2_advantage_target = tf.subtract(h_fc2_action_target, tf.reduce_mean(h_fc2_action_target))
+        h_fc2_advantage_target = tf.subtract(h_fc2_action_target, tf.reduce_mean(input_tensor=h_fc2_action_target))
 
         output_target = tf.add(h_fc2_state_target, h_fc2_advantage_target)  # 目标网络的最后输出
 
@@ -283,45 +288,45 @@ class DQN:
     def loss_and_train(self):
 
         # Loss function and Train
-        action_target = tf.placeholder(tf.float32, shape=[None, self.Num_action])
+        action_target = tf.compat.v1.placeholder(tf.float32, shape=[None, self.Num_action])
 
-        y_target = tf.placeholder(tf.float32, shape=[None])
+        y_target = tf.compat.v1.placeholder(tf.float32, shape=[None])
         # 这里的 y_target 就是 target Q 值
 
-        y_prediction = tf.reduce_sum(tf.multiply(self.output, action_target), reduction_indices=1)
+        y_prediction = tf.reduce_sum(input_tensor=tf.multiply(self.output, action_target), axis=1)
 
         # ################################################## PER ############################################################
-        w_is = tf.placeholder(tf.float32, shape=[None])
+        w_is = tf.compat.v1.placeholder(tf.float32, shape=[None])
         TD_error_tf = tf.subtract(y_prediction, y_target)
 
         # Loss = tf.reduce_mean(tf.square(y_prediction - y_target))
-        Loss = tf.reduce_sum(tf.multiply(w_is, tf.square(y_prediction - y_target)))
+        Loss = tf.reduce_sum(input_tensor=tf.multiply(w_is, tf.square(y_prediction - y_target)))
         ###################################################################################################################
 
         # Loss = tf.reduce_mean(tf.square(y_prediction - y_target))
 
-        train_step = tf.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1e-2).minimize(Loss)
+        train_step = tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate, epsilon=1e-2).minimize(Loss)
 
         # return train_step, action_target, y_target, Loss
         return train_step, action_target, y_target, Loss, w_is, TD_error_tf
 
     def init_sess(self):
         # Initialize variables
-        config = tf.ConfigProto()
+        config = tf.compat.v1.ConfigProto()
 
-        sess = tf.InteractiveSession(config=config)
+        sess = tf.compat.v1.InteractiveSession(config=config)
 
         # os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m' + '_' + self.date_time)
         # 第二次训练
-        os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_2' + '_' + self.date_time)
+        # os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_2' + '_' + self.date_time)
         # 第三次训练
         # os.makedirs('saved_networks/' + '10_D3QN_PER_image_add_sensor_obstacle_world_30m_3' + '_' + self.date_time)
 
-        init = tf.global_variables_initializer()
+        init = tf.compat.v1.global_variables_initializer()
         sess.run(init)
 
         # Load the file if the saved file exists
-        saver = tf.train.Saver()
+        saver = tf.compat.v1.train.Saver()
         check_save = input('Load Model? (1=yes/2=no): ')
 
         if check_save == 1:
@@ -467,7 +472,7 @@ class DQN:
             feed_dict={self.x_image: observation_next_batch, self.x_sensor: state_next_batch})
         # 用 target 网络计算下一个 observation_stack 的 动作价值函数
         for i in range(len(minibatch)):
-            if terminal_batch[i]:
+            if terminal_batch[i] == True:
                 y_batch.append(reward_batch[i])
             else:
                 y_batch.append(reward_batch[i] + self.Gamma * Q_target[i, a_max[i]])
@@ -500,7 +505,7 @@ class DQN:
             # ################################################## PER ############################################################
             Q_batch = self.output_target.eval(feed_dict={self.x_image: [next_observation], self.x_sensor: [next_state]})
 
-            if terminal:
+            if terminal == True:
                 y = [reward]
             else:
                 y = [reward + self.Gamma * np.max(Q_batch)]
@@ -552,7 +557,7 @@ class DQN:
         # 随机种子	
         random.seed(1000)
         np.random.seed(1000)
-        tf.set_random_seed(1234)
+        tf.compat.v1.set_random_seed(1234)
 
         # 随机初始化起点和终点的位置
         while (True):
@@ -627,7 +632,7 @@ class DQN:
                 terminal = True
 
             # If terminal is True
-            if terminal:
+            if terminal == True:
                 # # if self.episode % 10 == 0:
                 # if self.progress == 'Training' and self.episode % 5 == 0:
                 #     self.save_model()

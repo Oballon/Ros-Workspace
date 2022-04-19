@@ -114,7 +114,7 @@ for m in range(num_test):
                 if math.sqrt((OBS_pos[i][0] - OBS_pos[j][0]) ** 2 + (OBS_pos[i][1] - OBS_pos[j][1]) ** 2) < 5.0:
                     flag = False
                     break
-        if flag == True:
+        if flag:
             break
     for i in range(num_obs):
         obs_pos_x[m][i] = OBS_pos[i][0]

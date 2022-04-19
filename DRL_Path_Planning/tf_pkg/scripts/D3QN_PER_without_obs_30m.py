@@ -16,16 +16,14 @@ Date: 06/2019
 # 训练好的网络模型
 # .../DRL_Path_Planning/src/tf_pkg/scripts/saved_networks/10_D3QN_PER_image_add_sensor_empty_world_30m_2019_06_01
 
+import datetime
+import math
+import os
+import random
+
+import numpy as np
 # Import modules
 import tensorflow as tf
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-import datetime
-import time
-import cv2
-import os
-import math
 
 from env_without_obs_30m import Env
 

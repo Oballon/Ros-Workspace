@@ -8,11 +8,8 @@ Date: 06/2019
 
 # 画出路径规划的结果
 
-import random
-import numpy as np
-import math
 import matplotlib.pyplot as plt
-import matplotlib as mpl
+import numpy as np
 
 num_test = 30  # 测试的组数
 gap = 20  # 画出动态障碍的间隔

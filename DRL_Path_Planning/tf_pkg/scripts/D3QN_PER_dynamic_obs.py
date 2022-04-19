@@ -10,16 +10,13 @@ Date: 06/2019
 # launch文件：ten_jackal_laser_add_apriltag.launch
 # world文件：10obstacle_sensor_30m_5jackal.world
 
-# Import modules
-import tensorflow as tf
+import datetime
+import math
+import os
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-import datetime
-import time
-import cv2
-import os
-import math
+# Import modules
+import tensorflow as tf
 
 from env_dynamic_obs import Env
 
@@ -316,7 +313,7 @@ class DQN:
 
         output_target = tf.add(
             h_fc2_state_target,
-            h_fc2_advantage_target)   # 目标网络的最后输出
+            h_fc2_advantage_target)  # 目标网络的最后输出
 
         return output, output_target
 
@@ -393,7 +390,7 @@ class DQN:
         state_stack = np.zeros((self.Num_stackFrame, self.Num_dataSize))
         for stack_frame in range(self.Num_stackFrame):
             state_stack[(self.Num_stackFrame - 1) - stack_frame,
-                        :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
+            :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
 
         observation = env_info[1]  # image info
         observation_set = []
@@ -428,7 +425,7 @@ class DQN:
         state_stack = np.zeros((self.Num_stackFrame, self.Num_dataSize))
         for stack_frame in range(self.Num_stackFrame):
             state_stack[(self.Num_stackFrame - 1) - stack_frame,
-                        :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
+            :] = state_set[-1 - (self.Num_skipFrame * stack_frame)]
 
         del self.state_set[0]
 
@@ -512,11 +509,12 @@ class DQN:
                 y_batch.append(reward_batch[i] +
                                self.Gamma * Q_target[i, a_max[i]])
                 # target Q-network 来计算 target Q 值
-        _, self.loss, TD_error_batch = self.sess.run([self.train_step, self.loss_train, self.TD_error], feed_dict={self.action_target: action_batch,
-                                                                                                                   self.y_target: y_batch,
-                                                                                                                   self.x_image: observation_batch,
-                                                                                                                   self.x_sensor: state_batch,
-                                                                                                                   self.w_is: w_batch})
+        _, self.loss, TD_error_batch = self.sess.run([self.train_step, self.loss_train, self.TD_error],
+                                                     feed_dict={self.action_target: action_batch,
+                                                                self.y_target: y_batch,
+                                                                self.x_image: observation_batch,
+                                                                self.x_sensor: state_batch,
+                                                                self.w_is: w_batch})
         # Update TD_list
         for i_batch in range(len(batch_index)):
             self.TD_list[batch_index[i_batch]] = pow(
@@ -534,8 +532,8 @@ class DQN:
             next_observation,
             next_state,
             terminal):
-                # If Replay memory is longer than Num_replay_memory, delete the
-                # oldest one
+        # If Replay memory is longer than Num_replay_memory, delete the
+        # oldest one
         if len(self.Replay_memory) >= self.Num_replay_memory:
             del self.Replay_memory[0]
             self.TD_list = np.delete(self.TD_list, 0)
@@ -594,6 +592,7 @@ class DQN:
             minibatch.append(np.array(self.Replay_memory)[TD_index])
 
         return minibatch, w_batch, batch_index
+
     ##########################################################################
 
     def main(self):
@@ -643,13 +642,13 @@ class DQN:
         tf.set_random_seed(1234)
 
         # 随机初始化起点和终点的位置
-        while(True):
+        while (True):
             randposition = 2 * self.d * \
-                np.random.random_sample((2, 2)) - self.d
+                           np.random.random_sample((2, 2)) - self.d
             if math.sqrt((randposition[0][0] -
-                          randposition[1][0])**2 +
+                          randposition[1][0]) ** 2 +
                          (randposition[0][1] -
-                          randposition[1][1])**2) > 20.0:
+                          randposition[1][1]) ** 2) > 20.0:
                 break
 
         # 保存小车的起点和终点
@@ -676,9 +675,9 @@ class DQN:
         goal_y = []
         randangle = []
 
-        env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp,\
-            jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
-            jackal9_x_temp, jackal9_y_temp = env.get_env()
+        env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp, \
+        jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
+        jackal9_x_temp, jackal9_y_temp = env.get_env()
         # 保存小车的坐标
         jackal_x.append(jackal_x_temp)
         jackal_y.append(jackal_y_temp)
@@ -726,9 +725,9 @@ class DQN:
             env.run()
 
             # Get information for update
-            env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp,\
-                jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
-                jackal9_x_temp, jackal9_y_temp = env.get_env()
+            env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp, \
+            jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
+            jackal9_x_temp, jackal9_y_temp = env.get_env()
             # 保存小车的坐标
             jackal_x.append(jackal_x_temp)
             jackal_y.append(jackal_y_temp)
@@ -851,13 +850,13 @@ class DQN:
                 self.score = 0
 
                 # 随机初始化起点和终点的位置
-                while(True):
+                while (True):
                     randposition = 2 * self.d * \
-                        np.random.random_sample((2, 2)) - self.d
+                                   np.random.random_sample((2, 2)) - self.d
                     if math.sqrt((randposition[0][0] -
-                                  randposition[1][0])**2 +
+                                  randposition[1][0]) ** 2 +
                                  (randposition[0][1] -
-                                  randposition[1][1])**2) > 20.0:
+                                  randposition[1][1]) ** 2) > 20.0:
                         break
 
                 i = i + 1
@@ -886,9 +885,9 @@ class DQN:
                 goal_y = []
                 randangle = []
 
-                env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp,\
-                    jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
-                    jackal9_x_temp, jackal9_y_temp = env.get_env()
+                env_info, jackal_x_temp, jackal_y_temp, jackal0_x_temp, jackal0_y_temp, jackal1_x_temp, jackal1_y_temp, jackal2_x_temp, jackal2_y_temp, jackal3_x_temp, jackal3_y_temp, \
+                jackal4_x_temp, jackal4_y_temp, jackal5_x_temp, jackal5_y_temp, jackal6_x_temp, jackal6_y_temp, jackal7_x_temp, jackal7_y_temp, jackal8_x_temp, jackal8_y_temp, \
+                jackal9_x_temp, jackal9_y_temp = env.get_env()
                 # 保存小车的坐标
                 jackal_x.append(jackal_x_temp)
                 jackal_y.append(jackal_y_temp)

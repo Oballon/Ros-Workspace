@@ -6,36 +6,26 @@ Author: Wangcai
 Date: 06/2019
 """
 
+import math
+import time
+
+import cv2
+import numpy as np
 import rospy
-from std_msgs.msg import String
-from gazebo_msgs.msg import ModelStates
+from cv_bridge import CvBridge, CvBridgeError
 from gazebo_msgs.msg import ModelState
-from geometry_msgs.msg import Twist
-from geometry_msgs.msg import Pose
+from gazebo_msgs.msg import ModelStates
 from gazebo_msgs.srv import SetModelState
-from std_srvs.srv import Empty
-from nav_msgs.msg import Odometry
+from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import LaserScan
-
-import matplotlib.pyplot as plt
-import os
-import shutil
-import math
-import numpy as np
-import time
-import random
-import tensorflow as tf
-import datetime
-import cv2
-from cv_bridge import CvBridge, CvBridgeError
 
 MAXENVSIZE = 30.0  # 边长为30的正方形作为环境的大小
 MAXLASERDIS = 10.0  # 雷达最大的探测距离
 Image_matrix = []
 
 
-class Env():
+class Env:
     def __init__(self):
         rospy.init_node('control_node', anonymous=True)
         '''
